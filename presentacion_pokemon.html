@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragmentación de Datos - ¡Edición Pokémon!</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css">
+    <style>
+        :root {
+            --pokemon-red: #FF0000;
+            --pokemon-blue: #3B4CCA;
+            --pokemon-yellow: #FFDE00;
+            --electric: #F7D038;
+            --fire: #F08030;
+            --water: #6890F0;
+            --grass: #78C850;
+            --dark-bg: #1a1a2e;
+            --card-bg: #16213e;
+        }
+
+        .reveal {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg) 100%);
+            font-size: 28px;
+        }
+
+        .reveal .slides {
+            overflow-y: auto !important;
+            height: 100vh;
+            max-height: 100vh;
+        }
+
+        .reveal .slides section {
+            overflow-y: auto !important;
+            max-height: 90vh;
+            padding: 20px;
+        }
+
+        .reveal h1 {
+            color: var(--pokemon-yellow);
+            text-shadow: 4px 4px 0px var(--pokemon-red), 
+                         8px 8px 0px var(--pokemon-blue);
+            font-size: 3em;
+            animation: bounce 2s ease-in-out infinite;
+            margin-bottom: 30px;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-15px); }
+            60% { transform: translateY(-8px); }
+        }
+
+        .reveal h2 {
+            color: var(--pokemon-red);
+            text-shadow: 3px 3px 8px rgba(0,0,0,0.7);
+            font-size: 2.5em;
+            margin-bottom: 40px;
+        }
+
+        .reveal h3 {
+            color: var(--electric);
+            font-size: 1.8em;
+            margin: 25px 0;
+        }
+
+        .reveal p, .reveal li {
+            font-size: 1.1em;
+            line-height: 1.8;
+        }
+
+        /* Pokéball */
+        .pokeball {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(180deg, var(--pokemon-red) 50%, white 50%);
+            border-radius: 50%;
+            border: 6px solid black;
+            position: relative;
+            margin: 30px auto;
+            animation: spin-float 4s ease-in-out infinite;
+        }
+
+        @keyframes spin-float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-15px) rotate(90deg); }
+            50% { transform: translateY(0) rotate(180deg); }
+            75% { transform: translateY(-15px) rotate(270deg); }
+        }
+
+        .pokeball::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            border: 6px solid black;
+            z-index: 2;
+        }
+
+        .pokeball::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: black;
+            transform: translateY(-50%);
+        }
+
+        /* Cards */
+        .poke-card {
+            background: linear-gradient(135deg, var(--card-bg), #0f3460);
+            border: 5px solid var(--pokemon-yellow);
+            border-radius: 25px;
+            padding: 30px;
+            margin: 25px;
+            box-shadow: 0 15px 40px rgba(255, 222, 0, 0.4);
+            transition: all 0.4s ease;
+        }
+
+        .poke-card:hover {
+            transform: translateY(-12px) scale(1.05);
+            box-shadow: 0 20px 60px rgba(255, 222, 0, 0.6);
+            border-color: var(--pokemon-red);
+        }
+
+        /* Type badges */
+        .type-badge {
+            display: inline-block;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 8px;
+            font-size: 1em;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+
+        .electric { background: var(--electric); color: black; }
+        .fire { background: var(--fire); color: white; }
+        .water { background: var(--water); color: white; }
+        .grass { background: var(--grass); color: white; }
+
+        /* Stats */
+        .stat {
+            margin: 20px 0;
+        }
+
+        .stat-label {
+            color: var(--pokemon-yellow);
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .stat-bar {
+            width: 100%;
+            height: 35px;
+            background: black;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 3px solid var(--pokemon-yellow);
+        }
+
+        .stat-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--grass), var(--electric));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+            font-weight: bold;
+            color: black;
+            transition: width 2s ease;
+        }
+
+        .critical {
+            background: linear-gradient(90deg, var(--fire), #ff4444) !important;
+            animation: pulse-red 1s infinite;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Grid */
+        .poke-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        /* Pokédex */
+        .pokedex {
+            background: var(--pokemon-red);
+            border-radius: 25px;
+            padding: 35px;
+            border: 8px solid black;
+            box-shadow: 0 15px 50px rgba(255, 0, 0, 0.6);
+            position: relative;
+            margin: 30px auto;
+        }
+
+        .pokedex::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #87CEEB, var(--water));
+            border-radius: 50%;
+            border: 5px solid white;
+            box-shadow: 0 0 25px rgba(104, 144, 240, 0.9);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 25px rgba(104, 144, 240, 0.9); }
+            50% { box-shadow: 0 0 40px rgba(104, 144, 240, 1); }
+        }
+
+        .screen {
+            background: #1a3a1a;
+            border: 5px solid black;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 25px;
+            color: var(--grass);
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.8;
+        }
+
+        /* Batalla */
+        .battle-screen {
+            background: linear-gradient(180deg, #87CEEB 50%, #90EE90 50%);
+            border: 8px solid black;
+            border-radius: 20px;
+            padding: 40px;
+            position: relative;
+            min-height: 400px;
+        }
+
+        .trainer-sprite {
+            font-size: 5em;
+            position: absolute;
+            animation: appear 1s ease-out;
+        }
+
+        @keyframes appear {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .left-sprite {
+            bottom: 40px;
+            left: 60px;
+        }
+
+        .right-sprite {
+            top: 60px;
+            right: 80px;
+        }
+
+        /* Lista con efectos */
+        .poke-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .poke-list li {
+            background: linear-gradient(90deg, transparent, rgba(255, 222, 0, 0.15));
+            border-left: 5px solid var(--pokemon-yellow);
+            padding: 18px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+
+        .poke-list li:hover {
+            background: linear-gradient(90deg, transparent, rgba(255, 222, 0, 0.3));
+            transform: translateX(15px);
+            border-left-color: var(--pokemon-red);
+        }
+
+        .poke-list li::before {
+            content: '⚡ ';
+            margin-right: 10px;
+        }
+
+        .danger-list li {
+            border-left-color: var(--fire);
+        }
+
+        .danger-list li::before {
+            content: '🔥 ';
+        }
+
+        /* Botones interactivos */
+        .poke-button {
+            background: var(--pokemon-red);
+            border: 4px solid black;
+            border-radius: 15px;
+            color: white;
+            padding: 18px 35px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .poke-button:hover {
+            background: var(--pokemon-yellow);
+            color: black;
+            transform: scale(1.1);
+            box-shadow: 0 12px 30px rgba(255, 222, 0, 0.6);
+        }
+
+        .poke-button:active {
+            transform: scale(0.95);
+        }
+
+        .poke-button.correct {
+            background: var(--grass) !important;
+            color: white !important;
+            border-color: var(--grass) !important;
+            box-shadow: 0 0 30px var(--grass) !important;
+        }
+
+        /* Código */
+        .code-box {
+            background: linear-gradient(145deg, #0d1117, #161b22);
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 25px;
+            font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+            color: #c9d1d9;
+            font-size: 0.95em;
+            margin: 25px 0;
+            overflow-x: auto;
+            text-align: left;
+            line-height: 1.8;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .code-box::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            padding: 2px;
+            background: linear-gradient(135deg, var(--grass), var(--electric), var(--water));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.6;
+        }
+        
+        .code-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 48px rgba(120, 200, 80, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .code-box .keyword {
+            color: var(--electric);
+            font-weight: bold;
+        }
+
+        .code-box .string {
+            color: var(--fire);
+        }
+
+        .code-box .comment {
+            color: #888;
+            font-style: italic;
+        }
+
+        /* Tabla de datos */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .data-table th {
+            background: var(--pokemon-yellow);
+            color: var(--pokemon-black);
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 222, 0, 0.2);
+            color: white;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 222, 0, 0.1);
+        }
+
+        .schema-box {
+            background: linear-gradient(145deg, rgba(59, 76, 202, 0.15), rgba(104, 144, 240, 0.1));
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 25px;
+            margin: 25px 0;
+            font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+            line-height: 2;
+            box-shadow: 0 8px 32px rgba(59, 76, 202, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .schema-box::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            padding: 2px;
+            background: linear-gradient(135deg, var(--water), var(--electric));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.7;
+        }
+        
+        .schema-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 48px rgba(104, 144, 240, 0.4),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .schema-box .field {
+            color: var(--electric);
+            font-weight: bold;
+        }
+
+        .schema-box .type {
+            color: var(--water);
+        }
+
+        .schema-box .constraint {
+            color: var(--fire);
+            font-style: italic;
+        }
+
+        /* Sprites animados */
+        .sprite {
+            font-size: 4em;
+            display: inline-block;
+            animation: jump 0.6s ease-in-out infinite;
+        }
+
+        @keyframes jump {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* Feedback */
+        .feedback {
+            display: none;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            font-size: 1.1em;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .success {
+            background: rgba(120, 200, 80, 0.3);
+            border: 4px solid var(--grass);
+            color: var(--grass);
+        }
+
+        .error {
+            background: rgba(240, 128, 48, 0.3);
+            border: 4px solid var(--fire);
+            color: var(--fire);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .reveal { font-size: 24px; }
+            .reveal h1 { font-size: 2.2em; }
+            .reveal h2 { font-size: 1.8em; }
+            .poke-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Animación de entrada */
+        .slide-in {
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            
+            <!-- Slide 1: Título -->
+            <section>
+                <h1>⚡ FRAGMENTACIÓN DE DATOS ⚡</h1>
+                <h2 style="color: var(--pokemon-yellow);">¡Dividir para Conquistar!</h2>
+                <div style="display: flex; justify-content: center; align-items: center; gap: 40px; margin: 40px 0;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" 
+                         alt="Pikachu" style="width: 200px; animation: jump 0.6s ease-in-out infinite;">
+                    <div class="pokeball"></div>
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png" 
+                         alt="Charizard" style="width: 200px; animation: jump 0.6s ease-in-out infinite; animation-delay: 0.3s;">
+                </div>
+                <p style="color: white; font-size: 1.4em; margin-top: 30px;">
+                    🎮 Edición Pokémon para Entrenadores de Bases de Datos
+                </p>
+                <p style="color: var(--electric); font-size: 1.2em; margin-top: 20px;">
+                    Curso: Base de Datos II
+                </p>
+            </section>
+
+            <!-- Slide 2: El Problema - Base de Datos Sobrecargada -->
+            <section>
+                <h2>🔴 ¡BASE DE DATOS DEBILITADA!</h2>
+                <div class="battle-screen">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/143.png" 
+                         alt="Snorlax" class="trainer-sprite left-sprite" style="width: 180px;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/94.png" 
+                         alt="Gengar" class="trainer-sprite right-sprite" style="width: 160px;">
+                    
+                    <div style="position: absolute; bottom: 150px; left: 50%; transform: translateX(-50%); width: 80%;">
+                        <div class="stat">
+                            <span class="stat-label">CPU - Procesamiento ⚠️</span>
+                            <div class="stat-bar">
+                                <div class="stat-fill critical" style="width: 98%;">98%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat">
+                            <span class="stat-label">Memoria - RAM ⚠️</span>
+                            <div class="stat-bar">
+                                <div class="stat-fill critical" style="width: 95%;">95%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat">
+                            <span class="stat-label">Latencia - Respuesta ⚠️</span>
+                            <div class="stat-bar">
+                                <div class="stat-fill critical" style="width: 92%;">CRÍTICO</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p style="color: var(--fire); font-size: 1.3em; margin-top: 30px;">
+                    💔 ¡La base de datos monolítica se debilita! <br>
+                    <span style="color: white; font-size: 0.9em;">Caso Real: Notion alcanzó sus límites</span>
+                </p>
+            </section>
+
+            <!-- Slide 3: La Solución - Fragmentación -->
+            <section>
+                <h2>✨ ¡FRAGMENTACIÓN AL RESCATE!</h2>
+                
+                <div class="poke-card slide-in">
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/384.png" 
+                             alt="Rayquaza" style="width: 150px;">
+                        <div>
+                            <h3>📚 ¿Qué es la Fragmentación (Sharding)?</h3>
+                            <p style="color: white; font-size: 1.15em; line-height: 1.9;">
+                                Es una técnica de <strong style="color: var(--electric);">escalado horizontal</strong> 
+                                que distribuye los datos entre <strong style="color: var(--water);">múltiples bases de datos 
+                                independientes</strong>, como si tuvieras varios Pokémon legendarios trabajando en equipo.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 40px;">
+                    <div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap;">
+                        <div style="text-align: center;">
+                            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/143.png" 
+                                 alt="Snorlax" style="width: 140px;">
+                            <p style="color: var(--fire); font-weight: bold; font-size: 1.1em;">Monolito</p>
+                            <p style="color: white;">(Un solo servidor)</p>
+                        </div>
+                        
+                        <div style="font-size: 3em; color: var(--pokemon-yellow);">⚡→⚡</div>
+                        
+                        <div style="text-align: center;">
+                            <div style="display: flex; gap: 10px;">
+                                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" 
+                                     alt="Pikachu" style="width: 100px;">
+                                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png" 
+                                     alt="Charizard" style="width: 100px;">
+                                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png" 
+                                     alt="Blastoise" style="width: 100px;">
+                            </div>
+                            <p style="color: var(--grass); font-weight: bold; font-size: 1.1em;">Fragmentado</p>
+                            <p style="color: white;">(Múltiples servidores)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="poke-card" style="margin-top: 40px; border-color: var(--fire);">
+                    <p style="color: white; font-size: 1.1em;">
+                        <strong style="color: var(--fire);">VS Particionamiento:</strong> 
+                        El particionamiento organiza datos en UNA base de datos 🗂️<br>
+                        <strong style="color: var(--grass);">Fragmentación:</strong> 
+                        Distribuye entre DIFERENTES servidores 🌐
+                    </p>
+                </div>
+            </section>
+
+            <!-- Slide 4: Tipos de Fragmentación -->
+            <section>
+                <h2>🎒 TIPOS DE FRAGMENTACIÓN</h2>
+                <p style="color: var(--pokemon-yellow); font-size: 1.3em;">¡Elige tu estrategia!</p>
+                
+                <div class="poke-grid">
+                    <div class="poke-card">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" 
+                             alt="Pikachu" style="width: 120px; margin-bottom: 15px;">
+                        <span class="type-badge electric">⚡ HORIZONTAL</span>
+                        <h3>División por Filas</h3>
+                        <p style="color: white;">
+                            <strong>🎯 Analogía:</strong> Separar Pokémon por región (Kanto, Johto, Hoenn)<br>
+                            <strong>💡 Uso:</strong> Apps multitenant - cada cliente en su propio fragmento
+                        </p>
+                    </div>
+
+                    <div class="poke-card">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png" 
+                             alt="Blastoise" style="width: 120px; margin-bottom: 15px;">
+                        <span class="type-badge water">💧 VERTICAL</span>
+                        <h3>División por Columnas</h3>
+                        <p style="color: white;">
+                            <strong>🎯 Analogía:</strong> Separar estadísticas básicas de movimientos especiales<br>
+                            <strong>💡 Uso:</strong> Cuando algunas columnas se usan más que otras
+                        </p>
+                    </div>
+
+                    <div class="poke-card">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/3.png" 
+                             alt="Venusaur" style="width: 120px; margin-bottom: 15px;">
+                        <span class="type-badge grass">🍃 HÍBRIDA</span>
+                        <h3>Combinación</h3>
+                        <p style="color: white;">
+                            <strong>🎯 Analogía:</strong> ¡Pokémon de doble tipo!<br>
+                            <strong>💡 Uso:</strong> Optimizaciones complejas de alto rendimiento
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 5: Algoritmos de Distribución -->
+            <section>
+                <h2>⚔️ ALGORITMOS DE DISTRIBUCIÓN</h2>
+                
+                <div class="poke-card slide-in">
+                    <span class="type-badge electric">🔑 HASH SHARDING</span>
+                    <p style="color: white; margin-top: 15px; font-size: 1.1em;">
+                        <strong style="color: var(--electric);">Cómo funciona:</strong> 
+                        Aplica función hash a la clave → determina el fragmento
+                    </p>
+                    <div class="code-box">
+<span class="comment">-- Algoritmo de Hash Sharding</span>
+shard_id = <span class="keyword">hash</span>(pokemon_id) <span class="keyword">%</span> num_shards
+
+<span class="comment">-- Ejemplo práctico en PostgreSQL:</span>
+<span class="keyword">SELECT</span> 
+    pokemon_id,
+    pokemon_name,
+    <span class="keyword">MOD</span>(<span class="keyword">hashtext</span>(pokemon_id::<span class="keyword">text</span>), 3) 
+        <span class="keyword">AS</span> shard_id
+<span class="keyword">FROM</span> pokemon;
+
+<span class="comment">-- Resultado: hash(25) % 3 = Shard 1 (Pikachu)</span>
+                </div>
+                    <p style="color: var(--grass);">✅ Distribución uniforme</p>
+                    <p style="color: var(--fire);">❌ Dificulta agrupar datos relacionados</p>
+                </div>
+
+                <div class="poke-card slide-in">
+                    <span class="type-badge water">📏 RANGE SHARDING</span>
+                    <p style="color: white; margin-top: 15px; font-size: 1.1em;">
+                        <strong style="color: var(--water);">Cómo funciona:</strong> 
+                        Distribución por rangos de valores
+                    </p>
+                    <div class="code-box">
+<span class="comment">-- Range Sharding por Generación</span>
+<span class="keyword">CREATE TABLE</span> pokemon_gen1 (
+    <span class="keyword">CHECK</span> (
+        pokemon_id >= 1 <span class="keyword">AND</span> 
+        pokemon_id <= 151
+    )
+) <span class="keyword">INHERITS</span> (pokemon);
+
+<span class="keyword">CREATE TABLE</span> pokemon_gen2 (
+    <span class="keyword">CHECK</span> (
+        pokemon_id >= 152 <span class="keyword">AND</span> 
+        pokemon_id <= 251
+    )
+) <span class="keyword">INHERITS</span> (pokemon);
+
+<span class="comment">-- Lógica de distribución:</span>
+<span class="comment">-- Si pokemon_id entre 1-151   → Shard 1 (Kanto)</span>
+<span class="comment">-- Si pokemon_id entre 152-251 → Shard 2 (Johto)</span>
+                </div>
+                    <p style="color: var(--grass);">✅ Fácil implementación, ideal para consultas por rango</p>
+                    <p style="color: var(--fire);">❌ Riesgo de "puntos calientes"</p>
+                </div>
+
+                <div class="poke-card slide-in">
+                    <span class="type-badge grass">📖 DIRECTORY SHARDING</span>
+                    <p style="color: white; margin-top: 15px; font-size: 1.1em;">
+                        <strong style="color: var(--grass);">Cómo funciona:</strong> 
+                        Tabla de búsqueda mapea entidades a fragmentos
+                    </p>
+                    <p style="color: var(--grass);">✅ Alta flexibilidad</p>
+                    <p style="color: var(--fire);">❌ Tabla puede ser cuello de botella</p>
+                </div>
+            </section>
+
+            <!-- Slide 6: Ventajas -->
+            <section>
+                <h2>🏆 VENTAJAS - ¡SUPER EFECTIVO!</h2>
+                
+                <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 30px;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/448.png" 
+                         alt="Lucario" style="width: 180px;">
+                    <ul class="poke-list" style="flex: 1;">
+                        <li>
+                            <strong style="color: var(--electric);">Escalabilidad Infinita:</strong> 
+                            Agrega más servidores como capturar más Pokémon para tu equipo
+                        </li>
+                        <li>
+                            <strong style="color: var(--water);">Rendimiento Mejorado:</strong> 
+                            Procesamiento paralelo → múltiples Pokémon atacando simultáneamente
+                        </li>
+                        <li>
+                            <strong style="color: var(--grass);">Alta Disponibilidad:</strong> 
+                            Si un fragmento falla, los demás siguen funcionando (¡no pierdes todos tus Pokémon!)
+                        </li>
+                    </ul>
+                </div>
+
+                <div style="display: flex; gap: 20px; align-items: center;">
+                    <ul class="poke-list" style="flex: 1;">
+                        <li>
+                            <strong style="color: var(--fire);">Aislamiento de Fallos:</strong> 
+                            Problemas en un fragmento quedan contenidos
+                        </li>
+                        <li>
+                            <strong style="color: var(--pokemon-yellow);">Optimización de Recursos:</strong> 
+                            Mejor uso del hardware disponible
+                        </li>
+                    </ul>
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/257.png" 
+                         alt="Blaziken" style="width: 180px;">
+                </div>
+
+                <div style="text-align: center; margin-top: 40px;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png" alt="Pikachu" style="width: 80px; animation: jump 0.6s ease-in-out infinite;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/6.png" alt="Charizard" style="width: 80px; animation: jump 0.6s ease-in-out infinite; animation-delay: 0.2s;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/9.png" alt="Blastoise" style="width: 80px; animation: jump 0.6s ease-in-out infinite; animation-delay: 0.4s;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/3.png" alt="Venusaur" style="width: 80px; animation: jump 0.6s ease-in-out infinite; animation-delay: 0.6s;">
+                </div>
+            </section>
+
+            <!-- Slide 7: Desventajas -->
+            <section>
+                <h2>⚠️ DESVENTAJAS - ¡CUIDADO!</h2>
+                
+                <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 30px;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/94.png" 
+                         alt="Gengar" style="width: 160px;">
+                    <ul class="poke-list danger-list" style="flex: 1;">
+                        <li>
+                            <strong style="color: var(--fire);">Complejidad Alta:</strong> 
+                            Como entrenar un equipo de 6 Pokémon diferentes vs solo 1
+                        </li>
+                        <li>
+                            <strong style="color: var(--fire);">Consultas Cross-Shard:</strong> 
+                            Lentas y difíciles (como hacer que Pokémon de diferentes regiones colaboren)
+                        </li>
+                        <li>
+                            <strong style="color: var(--fire);">Transacciones Distribuidas:</strong> 
+                            Mantener consistencia ACID entre fragmentos es un desafío
+                        </li>
+                    </ul>
+                </div>
+
+                <div style="display: flex; gap: 20px; align-items: center;">
+                    <ul class="poke-list danger-list" style="flex: 1;">
+                        <li>
+                            <strong style="color: var(--fire);">Re-fragmentación:</strong> 
+                            Redistribuir datos es costoso y delicado
+                        </li>
+                        <li>
+                            <strong style="color: var(--fire);">Integridad Referencial:</strong> 
+                            Claves foráneas no funcionan entre fragmentos diferentes
+                        </li>
+                        <li>
+                            <strong style="color: var(--fire);">Backup Complejo:</strong> 
+                            Necesitas estrategia de respaldo para múltiples servidores
+                        </li>
+                    </ul>
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/130.png" 
+                         alt="Gyarados" style="width: 180px;">
+                </div>
+            </section>
+
+            <!-- Slide 8: Herramientas PostgreSQL -->
+            <section>
+                <h2>🛠️ HERRAMIENTAS POKÉMON</h2>
+                
+                <div class="poke-card">
+                    <span class="type-badge water">🐘 POSTGRESQL NATIVO</span>
+                    <h3>Particionamiento Declarativo</h3>
+                    <p style="color: white; font-size: 1.1em;">
+                        Primer paso hacia la fragmentación completa - Divide tablas en particiones dentro del mismo servidor
+                    </p>
+                    <div class="code-box">
+<span class="comment">-- Particionamiento Nativo en PostgreSQL</span>
+<span class="keyword">CREATE TABLE</span> pokemon (
+    id <span class="keyword">SERIAL PRIMARY KEY</span>,
+    name <span class="keyword">VARCHAR</span>(100) <span class="keyword">NOT NULL</span>,
+    generation <span class="keyword">INT</span>,
+    type <span class="keyword">VARCHAR</span>(50),
+    hp <span class="keyword">INT</span>
+) <span class="keyword">PARTITION BY RANGE</span> (generation);
+
+<span class="comment">-- Crear particiones por generación</span>
+<span class="keyword">CREATE TABLE</span> pokemon_gen1 
+    <span class="keyword">PARTITION OF</span> pokemon
+    <span class="keyword">FOR VALUES FROM</span> (1) <span class="keyword">TO</span> (2);
+
+<span class="keyword">CREATE TABLE</span> pokemon_gen2 
+    <span class="keyword">PARTITION OF</span> pokemon
+    <span class="keyword">FOR VALUES FROM</span> (2) <span class="keyword">TO</span> (3);
+
+<span class="comment">-- Insertar datos - PostgreSQL elige partición automáticamente</span>
+<span class="keyword">INSERT INTO</span> pokemon 
+    (name, generation, type, hp)
+<span class="keyword">VALUES</span> 
+    (<span class="string">'Pikachu'</span>, 1, <span class="string">'Electric'</span>, 35);
+                    </div>
+                </div>
+
+                <div class="poke-card" style="margin-top: 30px;">
+                    <span class="type-badge electric">⚡ CITUS DATA</span>
+                    <h3>PostgreSQL Distribuido Real</h3>
+                    <p style="color: white; font-size: 1.1em;">
+                        Extensión que transforma PostgreSQL en base de datos distribuida verdadera
+                    </p>
+                    
+                    <table class="data-table" style="margin-top: 20px;">
+                        <thead>
+                            <tr>
+                                <th>Componente</th>
+                                <th>Función</th>
+                                <th>Características</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong style="color: var(--electric);">⚡ Nodo Coordinador</strong></td>
+                                <td>Recibe consultas y las distribuye</td>
+                                <td>Punto de entrada único, agrega resultados</td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color: var(--grass);">🍃 Nodos Trabajadores</strong></td>
+                                <td>Almacenan y procesan fragmentos</td>
+                                <td>Procesan en paralelo, contienen shards</td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color: var(--water);">💧 Tablas Distribuidas</strong></td>
+                                <td>Datos fragmentados entre workers</td>
+                                <td>Sharding automático por clave</td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color: var(--fire);">🔥 Tablas de Referencia</strong></td>
+                                <td>Replicadas en todos los nodos</td>
+                                <td>Para JOINs eficientes</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <p style="color: var(--pokemon-yellow); margin-top: 25px; font-size: 1.15em;">
+                        <strong>🎯 Casos de Uso:</strong> Apps SaaS multitenant, Análisis en tiempo real
+                    </p>
+                </div>
+            </section>
+
+            <!-- Slide 9: Caso de Estudio Notion -->
+            <section>
+                <h2>🎯 BATALLA ÉPICA: NOTION</h2>
+                
+                <div class="pokedex">
+                    <div class="screen">
+                        <h3 style="color: var(--electric); margin-bottom: 20px;">📊 ANÁLISIS DEL COMBATE</h3>
+                        
+                        <p><strong style="color: var(--fire);">❌ EL PROBLEMA:</strong></p>
+                        <p>→ CPU al 100% constantemente</p>
+                        <p>→ Fallos del proceso VACUUM</p>
+                        <p>→ Degradación global de rendimiento</p>
+                        
+                        <p style="margin-top: 20px;"><strong style="color: var(--water);">🎯 LA ESTRATEGIA:</strong></p>
+                        <p>→ Fragmentar por Workspace ID</p>
+                        <p>→ Mantener datos relacionados juntos</p>
+                        <p>→ Evitar consultas cross-shard</p>
+                        
+                        <p style="margin-top: 20px;"><strong style="color: var(--electric);">⚙️ IMPLEMENTACIÓN:</strong></p>
+                        <p>→ Duración: 3 días</p>
+                        <p>→ Hardware: 96 CPUs</p>
+                        <p>→ Arquitectura: 480 shards lógicos</p>
+                        <p>→ Distribución: 32 BD físicas</p>
+                        
+                        <p style="margin-top: 20px;"><strong style="color: var(--grass);">💡 LECCIONES:</strong></p>
+                        <p>✓ Fragmentar ANTES del límite crítico</p>
+                        <p>✓ Migración sin downtime es crucial</p>
+                        <p>✓ Clave de fragmentación = fundamental</p>
+                        <p>✓ Más shards lógicos que físicos</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 10: Aplicaciones Reales -->
+            <section>
+                <h2>🌍 APLICACIONES EN EL MUNDO REAL</h2>
+                
+                <div class="poke-grid">
+                    <div class="poke-card">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/52.png" 
+                             alt="Meowth" style="width: 100px; margin-bottom: 10px;">
+                        <span class="type-badge fire">E-COMMERCE</span>
+                        <p style="color: white; margin-top: 15px;">
+                            Fragmentación por cliente o región<br>
+                            <strong style="color: var(--electric);">Ej: Amazon, eBay</strong>
+                        </p>
+                    </div>
+
+                    <div class="poke-card">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/132.png" 
+                             alt="Ditto" style="width: 100px; margin-bottom: 10px;">
+                        <span class="type-badge water">REDES SOCIALES</span>
+                        <p style="color: white; margin-top: 15px;">
+                            Fragmentación por user_id<br>
+                            <strong style="color: var(--electric);">Ej: Instagram, Twitter</strong>
+                        </p>
+                    </div>
+
+                    <div class="poke-card">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/137.png" 
+                             alt="Porygon" style="width: 100px; margin-bottom: 10px;">
+                        <span class="type-badge grass">BIG DATA</span>
+                        <p style="color: white; margin-top: 15px;">
+                            Series temporales por rangos<br>
+                            <strong style="color: var(--electric);">Ej: Google Analytics</strong>
+                        </p>
+                    </div>
+
+                    <div class="poke-card">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png" 
+                             alt="Mewtwo" style="width: 100px; margin-bottom: 10px;">
+                        <span class="type-badge electric">MMO GAMES</span>
+                        <p style="color: white; margin-top: 15px;">
+                            ¡Origen del término "shard"!<br>
+                            <strong style="color: var(--electric);">Ej: World of Warcraft</strong>
+                        </p>
+                    </div>
+
+                    <div class="poke-card">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/242.png" 
+                             alt="Blissey" style="width: 100px; margin-bottom: 10px;">
+                        <span class="type-badge fire">FINTECH</span>
+                        <p style="color: white; margin-top: 15px;">
+                            Fragmentación por región legal<br>
+                            <strong style="color: var(--electric);">Alta disponibilidad</strong>
+                        </p>
+                    </div>
+
+                    <div class="poke-card">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/233.png" 
+                             alt="Porygon2" style="width: 100px; margin-bottom: 10px;">
+                        <span class="type-badge water">SAAS</span>
+                        <p style="color: white; margin-top: 15px;">
+                            Multitenant con aislamiento<br>
+                            <strong style="color: var(--electric);">Ej: Notion, Salesforce</strong>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 11: Resumen -->
+            <section>
+                <h2>📊 RESUMEN DE LA AVENTURA</h2>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 40px 0;">
+                    <div class="poke-card" style="border-color: var(--grass);">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/249.png" 
+                             alt="Lugia" style="width: 120px; margin-bottom: 15px;">
+                        <h3 style="color: var(--grass);">✅ VENTAJAS</h3>
+                        <ul style="list-style: none; padding: 0; text-align: left; color: white; font-size: 1.05em;">
+                            <li>⚡ Escalabilidad horizontal</li>
+                            <li>🚀 Mejor rendimiento</li>
+                            <li>🛡️ Alta disponibilidad</li>
+                            <li>🔒 Aislamiento de fallos</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="poke-card" style="border-color: var(--fire);">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/250.png" 
+                             alt="Ho-Oh" style="width: 120px; margin-bottom: 15px;">
+                        <h3 style="color: var(--fire);">⚠️ DESVENTAJAS</h3>
+                        <ul style="list-style: none; padding: 0; text-align: left; color: white; font-size: 1.05em;">
+                            <li>🔥 Mayor complejidad</li>
+                            <li>🐌 Consultas cross-shard</li>
+                            <li>🔄 Transacciones distribuidas</li>
+                            <li>💰 Re-fragmentación costosa</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="pokedex">
+                    <div class="screen">
+                        <h3 style="color: var(--electric); margin-bottom: 20px;">💭 CONSEJOS DEL PROFESOR OAK</h3>
+                        <p style="font-size: 1.1em; line-height: 1.9;">
+                            🎯 <strong>La fragmentación NO es para todos.</strong> A veces el escalado vertical 
+                            o mejor optimización es suficiente.
+                        </p>
+                        <p style="font-size: 1.1em; line-height: 1.9; margin-top: 15px;">
+                            🚀 <strong>Regla de Oro:</strong> Fragmenta cuando necesites escalar más allá 
+                            de un servidor, pero hazlo ANTES de la emergencia.
+                        </p>
+                        <p style="font-size: 1.1em; line-height: 1.9; margin-top: 15px;">
+                            ⚡ <strong>El futuro es distribuido.</strong> Planifica la escalabilidad desde 
+                            el diseño inicial.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 12: Pregunta 1 -->
+            <section>
+                <h2>🎮 PREGUNTA 1</h2>
+                
+                <div class="pokedex">
+                    <div class="screen">
+                        <h3 style="color: var(--electric);">📋 ESCENARIO</h3>
+                        <p style="font-size: 1.05em; line-height: 1.9;">
+                            Tienes una tabla <strong>TRANSACCIONES</strong> con millones de registros:
+                        </p>
+                        <div class="schema-box" style="margin: 20px 0;">
+<span class="keyword">CREATE TABLE</span> transacciones (
+    <span class="field">transaction_id</span> <span class="type">BIGSERIAL</span> <span class="constraint">PRIMARY KEY</span>,
+    <span class="field">user_id</span> <span class="type">INTEGER</span> <span class="constraint">NOT NULL</span>,
+    <span class="field">amount</span> <span class="type">DECIMAL</span>(10,2),
+    <span class="field">timestamp</span> <span class="type">TIMESTAMP</span>,
+    <span class="field">payment_method</span> <span class="type">VARCHAR</span>(50)
+);
+                        </div>
+                        <p style="color: var(--fire); font-weight: bold; font-size: 1.1em;">
+                            ⚡ 90% de consultas: "Obtener transacciones de un usuario"
+                        </p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--pokemon-yellow); margin: 35px 0;">
+                    ¿Qué estrategia elegirías?
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 900px; margin: 0 auto;">
+                    <button class="poke-button" onclick="checkAnswer(1, 'A')">
+                        A) Horizontal por user_id
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(1, 'B')">
+                        B) Vertical por payment_method
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(1, 'C')">
+                        C) Range por timestamp
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(1, 'D')">
+                        D) Solo índices
+                    </button>
+                </div>
+
+                <div id="feedback1" class="feedback"></div>
+            </section>
+
+            <!-- Slide 13: Pregunta 2 -->
+            <section>
+                <h2>🎮 PREGUNTA 2</h2>
+                
+                <div class="pokedex">
+                    <div class="screen">
+                        <h3 style="color: var(--electric);">📋 NUEVO DESAFÍO</h3>
+                        <p style="font-size: 1.05em; line-height: 1.9;">
+                            Una aplicación de blog tiene una tabla <strong>POSTS</strong>:
+                        </p>
+                        <div class="schema-box" style="margin: 20px 0;">
+<span class="keyword">CREATE TABLE</span> posts (
+    <span class="field">post_id</span> <span class="type">BIGSERIAL</span> <span class="constraint">PRIMARY KEY</span>,
+    <span class="field">author_id</span> <span class="type">INTEGER</span> <span class="constraint">NOT NULL</span>,
+    <span class="field">title</span> <span class="type">VARCHAR</span>(200),
+    <span class="field">content</span> <span class="type">TEXT</span>, <span class="comment">-- 80% del espacio</span>
+    <span class="field">created_at</span> <span class="type">TIMESTAMP</span>,
+    <span class="field">view_count</span> <span class="type">INTEGER</span>
+);
+                        </div>
+                        <p style="color: var(--fire); font-weight: bold; font-size: 1.1em;">
+                            ⚡ El campo <strong>content</strong> ocupa el 80% del espacio<br>
+                            ⚡ Pero las consultas buscan principalmente título y fecha
+                        </p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--pokemon-yellow); margin: 35px 0;">
+                    ¿Cuál es la mejor estrategia?
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 900px; margin: 0 auto;">
+                    <button class="poke-button" onclick="checkAnswer(2, 'A')">
+                        A) Horizontal por author_id
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(2, 'B')">
+                        B) Vertical: separar content
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(2, 'C')">
+                        C) Range por created_at
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(2, 'D')">
+                        D) Hash por post_id
+                    </button>
+                </div>
+
+                <div id="feedback2" class="feedback"></div>
+            </section>
+
+            <!-- Slide 14: Pregunta 3 -->
+            <section>
+                <h2>🎮 PREGUNTA 3</h2>
+                
+                <div class="pokedex">
+                    <div class="screen">
+                        <h3 style="color: var(--electric);">📋 SITUACIÓN CRÍTICA</h3>
+                        <p style="font-size: 1.05em; line-height: 1.9;">
+                            Una empresa de IoT almacena <strong>SENSOR_DATA</strong>:
+                        </p>
+                        <div class="schema-box" style="margin: 20px 0;">
+<span class="keyword">CREATE TABLE</span> sensor_data (
+    <span class="field">sensor_id</span> <span class="type">INTEGER</span> <span class="constraint">NOT NULL</span>,
+    <span class="field">timestamp</span> <span class="type">TIMESTAMP</span> <span class="constraint">NOT NULL</span>,
+    <span class="field">temperature</span> <span class="type">DECIMAL</span>(5,2),
+    <span class="field">humidity</span> <span class="type">DECIMAL</span>(5,2),
+    <span class="field">location</span> <span class="type">VARCHAR</span>(100)
+);
+                        </div>
+                        <p style="color: var(--fire); font-weight: bold; font-size: 1.1em;">
+                            ⚡ Reciben 1 millón de lecturas por minuto<br>
+                            ⚡ Las consultas analíticas filtran por rangos de fechas<br>
+                            ⚡ Datos antiguos raramente se consultan
+                        </p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--pokemon-yellow); margin: 35px 0;">
+                    ¿Qué tipo de sharding usarías?
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 900px; margin: 0 auto;">
+                    <button class="poke-button" onclick="checkAnswer(3, 'A')">
+                        A) Hash por sensor_id
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(3, 'B')">
+                        B) Range por timestamp
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(3, 'C')">
+                        C) Vertical por location
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(3, 'D')">
+                        D) Directory sharding
+                    </button>
+                </div>
+
+                <div id="feedback3" class="feedback"></div>
+            </section>
+
+            <!-- Slide 15: Pregunta 4 -->
+            <section>
+                <h2>🎮 PREGUNTA 4</h2>
+                
+                <div class="pokedex">
+                    <div class="screen">
+                        <h3 style="color: var(--electric);">📋 DESAFÍO CONCEPTUAL</h3>
+                        <p style="font-size: 1.15em; line-height: 1.9; color: var(--fire); font-weight: bold;">
+                            ⚡ ¿Cuál es la PRINCIPAL diferencia entre<br>
+                            PARTICIONAMIENTO y FRAGMENTACIÓN?
+                        </p>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 30px; margin: 40px 0;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/143.png" 
+                         alt="Snorlax" style="width: 150px;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/151.png" 
+                         alt="Mew" style="width: 150px;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 900px; margin: 0 auto;">
+                    <button class="poke-button" onclick="checkAnswer(4, 'A')" style="text-align: left; padding: 20px;">
+                        A) Particionamiento es para tablas pequeñas, fragmentación para grandes
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(4, 'B')" style="text-align: left; padding: 20px;">
+                        B) Particionamiento divide en UNA BD, fragmentación en MÚLTIPLES servidores
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(4, 'C')" style="text-align: left; padding: 20px;">
+                        C) Son exactamente lo mismo, solo cambia el nombre
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(4, 'D')" style="text-align: left; padding: 20px;">
+                        D) Fragmentación es más lenta que particionamiento
+                    </button>
+                </div>
+
+                <div id="feedback4" class="feedback"></div>
+            </section>
+
+            <!-- Slide 16: Pregunta 5 -->
+            <section>
+                <h2>🎮 PREGUNTA 5</h2>
+                
+                <div class="pokedex">
+                    <div class="screen">
+                        <h3 style="color: var(--electric);">📋 ESCENARIO REAL</h3>
+                        <p style="font-size: 1.05em; line-height: 1.9;">
+                            En el caso de <strong>NOTION</strong>, ¿qué clave de fragmentación eligieron?
+                        </p>
+                        <div style="margin: 25px 0; text-align: center;">
+                            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/384.png" 
+                                 alt="Rayquaza" style="width: 180px;">
+                        </div>
+                        <p style="color: var(--fire); font-weight: bold; font-size: 1.1em;">
+                            ⚡ Recuerda: Querían evitar consultas cross-shard<br>
+                            ⚡ Mantener datos relacionados juntos
+                        </p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--pokemon-yellow); margin: 35px 0;">
+                    ¿Cuál fue su elección?
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 900px; margin: 0 auto;">
+                    <button class="poke-button" onclick="checkAnswer(5, 'A')">
+                        A) User ID
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(5, 'B')">
+                        B) Workspace ID
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(5, 'C')">
+                        C) Block ID
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(5, 'D')">
+                        D) Timestamp
+                    </button>
+                </div>
+
+                <div id="feedback5" class="feedback"></div>
+            </section>
+
+            <!-- Slide 16: Pregunta 6 -->
+            <section>
+                <h2>🎮 PREGUNTA 6</h2>
+                
+                <div class="pokedex">
+                    <div class="screen">
+                        <h3 style="color: var(--electric);">📋 RED SOCIAL MASIVA</h3>
+                        <p style="font-size: 1.05em; line-height: 1.9;">
+                            Una red social como Instagram tiene tabla <strong>POSTS</strong>:
+                        </p>
+                        <div class="schema-box" style="margin: 20px 0;">
+<span class="keyword">CREATE TABLE</span> posts (
+    <span class="field">post_id</span> <span class="type">BIGSERIAL</span>,
+    <span class="field">user_id</span> <span class="type">BIGINT</span> <span class="constraint">NOT NULL</span>,
+    <span class="field">image_url</span> <span class="type">VARCHAR</span>(500),
+    <span class="field">caption</span> <span class="type">TEXT</span>,
+    <span class="field">likes_count</span> <span class="type">INTEGER</span>,
+    <span class="field">created_at</span> <span class="type">TIMESTAMP</span>
+);
+                        </div>
+                        <p style="color: var(--fire); font-weight: bold; font-size: 1.1em;">
+                            ⚡ 500 millones de usuarios activos<br>
+                            ⚡ Cada usuario ve principalmente sus propios posts<br>
+                            ⚡ Feed muestra posts de usuarios seguidos
+                        </p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--pokemon-yellow); margin: 35px 0;">
+                    ¿Mejor estrategia de sharding?
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 900px; margin: 0 auto;">
+                    <button class="poke-button" onclick="checkAnswer(6, 'A')">
+                        A) Hash por user_id
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(6, 'B')">
+                        B) Range por created_at
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(6, 'C')">
+                        C) Hash por post_id
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(6, 'D')">
+                        D) Vertical por image_url
+                    </button>
+                </div>
+
+                <div id="feedback6" class="feedback"></div>
+            </section>
+
+            <!-- Slide 17: Pregunta 7 -->
+            <section>
+                <h2>🎮 PREGUNTA 7</h2>
+                
+                <div class="pokedex">
+                    <div class="screen">
+                        <h3 style="color: var(--electric);">📋 VENTAJAS Y DESVENTAJAS</h3>
+                        <p style="font-size: 1.15em; line-height: 1.9; color: var(--fire); font-weight: bold;">
+                            ⚡ ¿Cuál es la MAYOR ventaja de la fragmentación?
+                        </p>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 30px; margin: 40px 0;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/448.png" 
+                         alt="Lucario" style="width: 150px;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/257.png" 
+                         alt="Blaziken" style="width: 150px;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 900px; margin: 0 auto;">
+                    <button class="poke-button" onclick="checkAnswer(7, 'A')" style="text-align: left; padding: 20px;">
+                        A) Reduce el costo de hardware necesario
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(7, 'B')" style="text-align: left; padding: 20px;">
+                        B) Escalabilidad horizontal prácticamente infinita
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(7, 'C')" style="text-align: left; padding: 20px;">
+                        C) Simplifica el código de la aplicación
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(7, 'D')" style="text-align: left; padding: 20px;">
+                        D) Elimina la necesidad de backups
+                    </button>
+                </div>
+
+                <div id="feedback7" class="feedback"></div>
+            </section>
+
+            <!-- Slide 18: Pregunta 8 -->
+            <section>
+                <h2>🎮 PREGUNTA 8</h2>
+                
+                <div class="pokedex">
+                    <div class="screen">
+                        <h3 style="color: var(--electric);">📋 E-COMMERCE GLOBAL</h3>
+                        <p style="font-size: 1.05em; line-height: 1.9;">
+                            Una tienda online global tiene tabla <strong>ORDERS</strong>:
+                        </p>
+                        <div class="schema-box" style="margin: 20px 0;">
+<span class="keyword">CREATE TABLE</span> orders (
+    <span class="field">order_id</span> <span class="type">BIGSERIAL</span>,
+    <span class="field">customer_id</span> <span class="type">BIGINT</span>,
+    <span class="field">country</span> <span class="type">VARCHAR</span>(50),
+    <span class="field">total_amount</span> <span class="type">DECIMAL</span>(10,2),
+    <span class="field">order_date</span> <span class="type">TIMESTAMP</span>,
+    <span class="field">status</span> <span class="type">VARCHAR</span>(20)
+);
+                        </div>
+                        <p style="color: var(--fire); font-weight: bold; font-size: 1.1em;">
+                            ⚡ Regulaciones requieren datos en país de origen<br>
+                            ⚡ GDPR en Europa, leyes locales en cada país<br>
+                            ⚡ Consultas casi siempre filtran por país
+                        </p>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--pokemon-yellow); margin: 35px 0;">
+                    ¿Mejor estrategia considerando las regulaciones?
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 900px; margin: 0 auto;">
+                    <button class="poke-button" onclick="checkAnswer(8, 'A')">
+                        A) Hash por customer_id
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(8, 'B')">
+                        B) Range por order_date
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(8, 'C')">
+                        C) Directory por country
+                    </button>
+                    <button class="poke-button" onclick="checkAnswer(8, 'D')">
+                        D) Vertical separando status
+                    </button>
+                </div>
+
+                <div id="feedback8" class="feedback"></div>
+            </section>
+
+            <!-- Slide 19: Q&A Final -->
+            <!-- Slide 19: Q&A Final -->
+            <section>
+                <h2>❓ PREGUNTAS Y RESPUESTAS</h2>
+                
+                <div style="display: flex; justify-content: center; gap: 30px; margin: 30px 0;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" 
+                         alt="Pikachu" style="width: 150px; animation: jump 0.6s ease-in-out infinite;">
+                    <div class="pokeball" style="width: 120px; height: 120px;"></div>
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png" 
+                         alt="Charizard" style="width: 150px; animation: jump 0.6s ease-in-out infinite; animation-delay: 0.3s;">
+                </div>
+                
+                <p style="color: var(--pokemon-yellow); font-size: 1.8em; margin: 30px 0;">
+                    ¡Gracias por tu atención!
+                </p>
+
+                <div style="background: var(--card-bg); border-radius: 20px; padding: 30px; margin: 40px auto; max-width: 800px; border: 3px solid var(--pokemon-yellow);">
+                    <h3 style="color: var(--electric); margin-bottom: 25px;">📚 Recursos Útiles</h3>
+                    
+                    <div style="text-align: left;">
+                        <p style="color: white; margin: 12px 0; font-size: 1.05em;">
+                            📖 <a href="https://www.postgresql.org/docs/current/ddl-partitioning.html" 
+                               style="color: var(--water);">PostgreSQL - Particionamiento</a>
+                        </p>
+                        <p style="color: white; margin: 12px 0; font-size: 1.05em;">
+                            🌐 <a href="https://www.citusdata.com/" 
+                               style="color: var(--water);">Citus Data - PostgreSQL Distribuido</a>
+                        </p>
+                        <p style="color: white; margin: 12px 0; font-size: 1.05em;">
+                            📝 <a href="https://www.notion.so/blog/sharding-postgres-at-notion" 
+                               style="color: var(--water);">Caso Notion - Sharding Journey</a>
+                        </p>
+                        <p style="color: white; margin: 12px 0; font-size: 1.05em;">
+                            ☁️ <a href="https://aws.amazon.com/es/what-is/database-sharding/" 
+                               style="color: var(--water);">AWS - ¿Qué es Sharding?</a>
+                        </p>
+                    </div>
+                </div>
+
+                <p style="color: var(--pokemon-red); font-size: 1.5em; margin-top: 40px;">
+                    🎮 ¡MISIÓN COMPLETADA!
+                </p>
+                <div style="margin-top: 20px;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png" alt="Pikachu" style="width: 80px; animation: jump 0.6s ease-in-out infinite;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/6.png" alt="Charizard" style="width: 80px; animation: jump 0.6s ease-in-out infinite; animation-delay: 0.2s;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/9.png" alt="Blastoise" style="width: 80px; animation: jump 0.6s ease-in-out infinite; animation-delay: 0.4s;">
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script>
+        // Inicializar Reveal.js
+        Reveal.initialize({
+            hash: true,
+            transition: 'slide',
+            transitionSpeed: 'default',
+            backgroundTransition: 'zoom',
+            controls: true,
+            progress: true,
+            center: false,
+            slideNumber: true,
+            keyboard: true,
+            overview: true,
+            touch: true,
+            loop: false,
+            fragments: true,
+            embedded: false,
+            help: true,
+            showNotes: false,
+            width: '100%',
+            height: '100%',
+            margin: 0.04,
+            minScale: 1,
+            maxScale: 1,
+            scrollActivationWidth: null
+        });
+
+        // Simulación interactiva - 8 preguntas
+        const answered = {};
+        const correctAnswers = {
+            1: 'A', // Horizontal por user_id
+            2: 'B', // Vertical separar content
+            3: 'B', // Range por timestamp (IoT)
+            4: 'B', // Particionamiento vs Fragmentación
+            5: 'B', // Workspace ID (Notion)
+            6: 'A', // Hash por user_id (Instagram)
+            7: 'B', // Escalabilidad horizontal
+            8: 'C'  // Directory por country (regulaciones)
+        };
+
+        function checkAnswer(questionNum, answer) {
+            if (answered[questionNum]) return;
+            
+            const feedback = document.getElementById(`feedback${questionNum}`);
+            if (!feedback) return;
+            
+            const isCorrect = answer === correctAnswers[questionNum];
+            
+            // Obtener todos los botones de esta pregunta
+            const questionDiv = document.getElementById(`question${questionNum}`);
+            const buttons = questionDiv ? questionDiv.querySelectorAll('.poke-button') : [];
+            
+            if (isCorrect) {
+                answered[questionNum] = true;
+                feedback.className = 'feedback success show';
+                
+                // Marcar botón correcto en verde
+                buttons.forEach(btn => {
+                    if (btn.textContent.trim().startsWith(answer + ')')) {
+                        btn.classList.add('correct');
+                    }
+                });
+                
+                let explanation = '';
+                switch(questionNum) {
+                    case 1:
+                        explanation = `
+                            La Fragmentación Horizontal por <code style="background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 5px;">user_id</code> es perfecta:<br><br>
+                            ✅ El 90% de consultas son por usuario específico<br>
+                            ✅ Todos los datos de un usuario en el mismo shard<br>
+                            ✅ Evita consultas cross-shard costosas<br>
+                            ✅ Escalable agregando más fragmentos
+                        `;
+                        break;
+                    case 2:
+                        explanation = `
+                            Fragmentación Vertical es ideal aquí:<br><br>
+                            ✅ Separa el campo <code>content</code> pesado en otra tabla/shard<br>
+                            ✅ Consultas de búsqueda solo acceden título y fecha (rápido)<br>
+                            ✅ Solo carga <code>content</code> cuando realmente se necesita<br>
+                            ✅ Reduce el I/O en el 80% de las consultas
+                        `;
+                        break;
+                    case 3:
+                        explanation = `
+                            Range Sharding por timestamp es óptimo:<br><br>
+                            ✅ Las consultas analíticas filtran por rangos de fechas<br>
+                            ✅ Datos antiguos raramente se consultan (pueden estar en shards "fríos")<br>
+                            ✅ Fácil agregar nuevos shards para nuevos períodos<br>
+                            ✅ Datos recientes en shards "calientes" de alto rendimiento
+                        `;
+                        break;
+                    case 4:
+                        explanation = `
+                            ¡Correcto! La diferencia clave:<br><br>
+                            ✅ <strong>Particionamiento:</strong> Divide datos dentro de UNA base de datos<br>
+                            ✅ <strong>Fragmentación:</strong> Distribuye entre MÚLTIPLES servidores físicos<br>
+                            ✅ Fragmentación permite verdadero escalado horizontal<br>
+                            ✅ Particionamiento es más simple, fragmentación más potente
+                        `;
+                        break;
+                    case 5:
+                        explanation = `
+                            ¡Exacto! Notion eligió Workspace ID:<br><br>
+                            ✅ Mantiene todos los datos de un workspace juntos<br>
+                            ✅ Evita consultas cross-shard (usuarios trabajan en un workspace)<br>
+                            ✅ Aislamiento natural por cliente/equipo<br>
+                            ✅ Facilita el escalado agregando más workspaces
+                        `;
+                        break;
+                    case 6:
+                        explanation = `
+                            Hash por user_id es perfecto para redes sociales:<br><br>
+                            ✅ Cada usuario ve principalmente sus propios posts<br>
+                            ✅ Feed de seguidos se puede cachear/pre-computar<br>
+                            ✅ Distribución uniforme entre 500M usuarios<br>
+                            ✅ Escala linealmente agregando más shards
+                        `;
+                        break;
+                    case 7:
+                        explanation = `
+                            ¡Correcto! La escalabilidad horizontal es la mayor ventaja:<br><br>
+                            ✅ Puedes agregar servidores indefinidamente<br>
+                            ✅ No estás limitado por el hardware de un solo servidor<br>
+                            ✅ Crece con tu negocio sin límite teórico<br>
+                            ✅ Permite manejar cargas masivas distribuyendo el trabajo
+                        `;
+                        break;
+                    case 8:
+                        explanation = `
+                            Directory Sharding por country es ideal para regulaciones:<br><br>
+                            ✅ Permite tener servidores físicos en cada país/región<br>
+                            ✅ Cumple con GDPR y regulaciones locales<br>
+                            ✅ Flexibilidad para mover shards según cambien leyes<br>
+                            ✅ Consultas naturalmente filtran por país
+                        `;
+                        break;
+                }
+                
+                feedback.innerHTML = `
+                    <div style="font-size: 3em; margin-bottom: 15px;">🎉⚡🏆</div>
+                    <strong style="font-size: 1.3em;">¡CORRECTO! ¡GOLPE CRÍTICO!</strong><br><br>
+                    <div style="text-align: left; font-size: 1.05em; line-height: 1.9;">
+                    ${explanation}<br><br>
+                    <strong>¡Has ganado experiencia como Entrenador de BD! 🎮</strong>
+                    </div>
+                `;
+            } else {
+                feedback.className = 'feedback error show';
+                
+                let hint = '';
+                switch(questionNum) {
+                    case 1:
+                        hint = 'Piensa en el patrón de acceso dominante (90% de consultas por usuario)';
+                        break;
+                    case 2:
+                        hint = 'El campo content es muy grande pero raramente se busca en queries';
+                        break;
+                    case 3:
+                        hint = 'Las consultas analíticas usan rangos de fechas, y datos viejos no se consultan';
+                        break;
+                    case 4:
+                        hint = 'Piensa en cuántos servidores físicos se usan en cada caso';
+                        break;
+                    case 5:
+                        hint = 'Recuerda: querían mantener datos relacionados juntos y evitar cross-shard queries';
+                        break;
+                    case 6:
+                        hint = 'Los usuarios ven principalmente sus propios posts y los de quien siguen';
+                        break;
+                    case 7:
+                        hint = 'Piensa en la capacidad de crecer sin límites de hardware';
+                        break;
+                    case 8:
+                        hint = 'Considera las regulaciones legales y la necesidad de flexibilidad geográfica';
+                        break;
+                }
+                
+                feedback.innerHTML = `
+                    <div style="font-size: 3em; margin-bottom: 15px;">❌</div>
+                    <strong style="font-size: 1.3em;">Sigue intentando</strong><br><br>
+                    <div style="font-size: 1.05em; line-height: 1.8;">
+                    💡 <em>Pista: ${hint}</em>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    feedback.className = 'feedback';
+                }, 4000);
+            }
+        }
+
+        // Reiniciar simulación al cambiar de slide
+        Reveal.on('slidechanged', event => {
+            // Reiniciar feedback de cualquier pregunta anterior
+            for (let i = 1; i <= 8; i++) {
+                const feedback = document.getElementById(`feedback${i}`);
+                if (feedback && event.currentSlide.querySelector(`#feedback${i}`) === null) {
+                    if (event.previousSlide && event.previousSlide.querySelector(`#feedback${i}`)) {
+                        feedback.className = 'feedback';
+                        feedback.innerHTML = '';
+                    }
+                }
+            }
+            
+            // Animar stats en slide 2
+            if (event.indexh === 1) {
+                const stats = document.querySelectorAll('.stat-fill');
+                stats.forEach(stat => {
+                    stat.style.width = '0';
+                    setTimeout(() => {
+                        stat.style.transition = 'width 2s ease';
+                        const finalWidth = stat.textContent.includes('%') ? stat.textContent : '92%';
+                        stat.style.width = finalWidth;
+                    }, 100);
+                });
+            }
+        });
+
+        // Añadir clase slide-in a elementos cuando aparecen
+        Reveal.on('slidechanged', event => {
+            const slideIns = event.currentSlide.querySelectorAll('.slide-in');
+            slideIns.forEach((el, idx) => {
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                }, idx * 200);
+            });
+        });
+    </script>
+</body>
+</html>
